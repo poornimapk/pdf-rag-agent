@@ -1,0 +1,8 @@
+llama-index
+llama-hub
+llama-index-vector-stores-milvus
+streamlit
+PyMuPDF==1.23.26
+tqdm==4.66.2
+spacy~=3.7.4
+pandas==2.2.1
