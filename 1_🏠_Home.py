@@ -35,6 +35,7 @@ def main():
                 vector_index = setup_vector_database_and_create_vector_index(documents=documents,
                                                                              collection_name=COLLECTION_NAME)
                 st.session_state.vector_index = vector_index
+                # Delete temp file TODO
                 st.write("PDF loaded to Vector store successfully!")
 
     # Create chat engine

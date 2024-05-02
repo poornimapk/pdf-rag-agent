@@ -8,6 +8,8 @@ import tempfile
 import os.path
 from llama_index.vector_stores.milvus import MilvusVectorStore
 from llama_index.core import VectorStoreIndex, StorageContext
+from llama_index.core.memory import ChatMemoryBuffer
+from core.constants import SYSTEM_PROMPT
 
 def text_formatter(text: str) -> str:
     """Performs minor formatting on text."""
@@ -169,7 +171,12 @@ def setup_vector_database_and_create_vector_index(documents, collection_name) ->
 
 def chat_engine_response(index: VectorStoreIndex, prompt_input):
     # chat_engine = index.as_chat_engine(chat_mode="condense_question")
-    chat_engine = index.as_chat_engine(chat_mode="react")
+    memory = ChatMemoryBuffer.from_defaults(token_limit=1500)
+    chat_engine = index.as_chat_engine(
+        chat_mode="context",
+        memory=memory,
+        system_prompt=SYSTEM_PROMPT,
+    )
     response = chat_engine.chat(prompt_input).response
     return response
 
