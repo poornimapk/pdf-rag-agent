@@ -9,7 +9,11 @@ import os.path
 from llama_index.vector_stores.milvus import MilvusVectorStore
 from llama_index.core import VectorStoreIndex, StorageContext
 from llama_index.core.memory import ChatMemoryBuffer
+from llama_index.core.tools import QueryEngineTool, ToolMetadata
+from llama_index.agent.openai import OpenAIAgent
+from llama_index.llms.openai import OpenAI
 from core.constants import SYSTEM_PROMPT
+
 
 def text_formatter(text: str) -> str:
     """Performs minor formatting on text."""
@@ -145,6 +149,7 @@ def create_documents_from_chunks(pages_and_chunks) -> list[Document]:
     return document_list
 
 
+#@st.cache_data  # Adding cache decorator which helps to cache the first result, and makes subsequent runs faster.
 def upload_file() -> str:
     pdf_doc = st.file_uploader("Upload your PDF and click on 'Process'", type="pdf")
     path_str = None
@@ -158,6 +163,7 @@ def upload_file() -> str:
     return path_str
 
 
+#@st.cache_resource  # Adding cache decorator which load index to cache first time, and makes subsequent calls faster.
 def setup_vector_database_and_create_vector_index(documents, collection_name) -> VectorStoreIndex:
     vector_store = MilvusVectorStore(dim=1536,
                                      collection_name=collection_name,
@@ -179,4 +185,21 @@ def chat_engine_response(index: VectorStoreIndex, prompt_input):
     )
     response = chat_engine.chat(prompt_input).response
     return response
+
+
+def build_query_engine_tool(index: VectorStoreIndex) -> QueryEngineTool:
+    return QueryEngineTool(
+        query_engine=index.as_query_engine(similarity_top_k=1),
+        metadata=ToolMetadata(
+            name="Paul_Graham_ideas",
+            description=("Provides information on essay about Paul Graham startup ideas"
+                         "Use a detailed plain text question as input to the tool."),
+        ),
+    )
+
+
+def create_base_openai_agent(query_engine_tools: QueryEngineTool):
+    llm = OpenAI(model="gpt-3.5-turbo-0613")
+    agent = OpenAIAgent.from_tools([query_engine_tools], llm=llm, verbose=True)
+    return agent
 

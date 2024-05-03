@@ -6,6 +6,8 @@ from utils import (
     create_documents_from_chunks,
     setup_vector_database_and_create_vector_index,
     chat_engine_response,
+    build_query_engine_tool,
+    create_base_openai_agent,
 )
 from core.constants import COLLECTION_NAME
 
@@ -35,12 +37,16 @@ def main():
                 vector_index = setup_vector_database_and_create_vector_index(documents=documents,
                                                                              collection_name=COLLECTION_NAME)
                 st.session_state.vector_index = vector_index
+                query_engine_tools = build_query_engine_tool(st.session_state.vector_index)
+                st.session_state.query_engine_tools = query_engine_tools
                 # Delete temp file TODO
                 st.write("PDF loaded to Vector store successfully!")
 
     # Create chat engine
     if "messages" not in st.session_state.keys():
-        st.session_state.messages = [{"role": "agent", "content": "How may I help you?"}]
+        st.session_state.messages = [{"role": "agent",
+                                      "content": "What questions do you have regarding the uploaded "
+                                                 "PDF?"}]
 
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
@@ -54,7 +60,9 @@ def main():
     if st.session_state.messages[-1]["role"] != "agent":
         with st.chat_message("agent"):
             with st.spinner("Thinking ... "):
-                response = chat_engine_response(index=st.session_state.vector_index, prompt_input=prompt)
+                agent = create_base_openai_agent(st.session_state.query_engine_tools)
+                # response = chat_engine_response(index=st.session_state.vector_index, prompt_input=prompt)
+                response = agent.chat(prompt).response
                 st.write(response)
         message = {"role": "agent", "content": response}
         st.session_state.messages.append(message)
