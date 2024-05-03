@@ -12,6 +12,7 @@ from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.tools import QueryEngineTool, ToolMetadata
 from llama_index.agent.openai import OpenAIAgent
 from llama_index.llms.openai import OpenAI
+from llama_index.core.llms import ChatMessage
 from core.constants import SYSTEM_PROMPT
 
 
@@ -149,7 +150,6 @@ def create_documents_from_chunks(pages_and_chunks) -> list[Document]:
     return document_list
 
 
-#@st.cache_data  # Adding cache decorator which helps to cache the first result, and makes subsequent runs faster.
 def upload_file() -> str:
     pdf_doc = st.file_uploader("Upload your PDF and click on 'Process'", type="pdf")
     path_str = None
@@ -163,7 +163,6 @@ def upload_file() -> str:
     return path_str
 
 
-#@st.cache_resource  # Adding cache decorator which load index to cache first time, and makes subsequent calls faster.
 def setup_vector_database_and_create_vector_index(documents, collection_name) -> VectorStoreIndex:
     vector_store = MilvusVectorStore(dim=1536,
                                      collection_name=collection_name,
@@ -198,8 +197,12 @@ def build_query_engine_tool(index: VectorStoreIndex) -> QueryEngineTool:
     )
 
 
-def create_base_openai_agent(query_engine_tools: QueryEngineTool):
+def create_base_openai_agent(query_engine_tools: QueryEngineTool, chat_history: [ChatMessage]):
     llm = OpenAI(model="gpt-3.5-turbo-0613")
-    agent = OpenAIAgent.from_tools([query_engine_tools], llm=llm, verbose=True)
+    agent = OpenAIAgent.from_tools(
+        tools=[query_engine_tools],
+        llm=llm,
+        verbose=True,
+        chat_history=chat_history,
+    )
     return agent
-

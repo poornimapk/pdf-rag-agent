@@ -10,6 +10,7 @@ from utils import (
     create_base_openai_agent,
 )
 from core.constants import COLLECTION_NAME
+from llama_index.core.llms import ChatMessage, MessageRole
 
 
 def main():
@@ -20,7 +21,7 @@ def main():
     if "conversation" not in st.session_state:
         st.session_state.conversation = None
     if "chat_history" not in st.session_state:
-        st.session_state.chat_history = None
+        st.session_state.chat_history = []
 
     st.header("Chat with PDF 📚")
     # user_question = st.text_input("Ask a question from your PDF")
@@ -55,12 +56,16 @@ def main():
     if prompt := st.chat_input():
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
+            st.session_state.chat_history.append(ChatMessage(
+                role=MessageRole.USER,
+                content=prompt,
+            ))
             st.write(prompt)
 
     if st.session_state.messages[-1]["role"] != "agent":
         with st.chat_message("agent"):
             with st.spinner("Thinking ... "):
-                agent = create_base_openai_agent(st.session_state.query_engine_tools)
+                agent = create_base_openai_agent(st.session_state.query_engine_tools, st.session_state.chat_history)
                 # response = chat_engine_response(index=st.session_state.vector_index, prompt_input=prompt)
                 response = agent.chat(prompt).response
                 st.write(response)
