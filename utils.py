@@ -151,7 +151,7 @@ def create_documents_from_chunks(pages_and_chunks) -> list[Document]:
 
 
 def upload_file() -> str:
-    pdf_doc = st.file_uploader("Upload your PDF and click on 'Process'", type="pdf")
+    pdf_doc = st.file_uploader("Knowledge File: ", type="pdf")
     path_str = None
     if pdf_doc:
         temp_dir = tempfile.mkdtemp()
